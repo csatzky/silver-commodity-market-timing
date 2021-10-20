@@ -13,4 +13,4 @@ The files of interest in this repository are:
 * data/10-year-breakeven-inflation-rate.csv: 10-Year Breakeven Inflation Rate [T5YIE], retrieved from FRED, Federal Reserve Bank of St. Louis
 * data/10-year-treasury.csv: 10-Year Treasury Constant Maturity Rate[DGS10], retrieved from FRED, Federal Reserve Bank of St. Louis
 
-For more information, please contact c.satzky@gmail.com
+For more information, please contact c.satzky@gmail.com.
