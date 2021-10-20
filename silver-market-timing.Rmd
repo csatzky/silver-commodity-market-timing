@@ -95,7 +95,7 @@ The silver commodity is a long-established constituent of the precious metals ma
 
 In the following, I first present a simple, theoretical pricing model. Secondly, I am empirically investigating key properties of this model by using recent market data. From these findings, I finally construct a statistical fair-value indicator for the silver spot price. This indicator conveniently absorbs statistically significant macroeconomic information that is relevant to silver spot pricing.
 
-All results are fully reproducible. All data and code are available on my [GitHub repo](https://github.com/csatzky/silver-commodity-market-timing).^[URL: https://github.com/csatzky/silver-commodity-market-timing]
+All results are fully reproducible. All data and code are available on my personal [GitHub page](https://github.com/csatzky).^[URL: https://github.com/csatzky]
 
 # Silver Spot Pricing Hypothesis
 
