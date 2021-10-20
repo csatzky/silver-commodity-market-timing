@@ -1,0 +1,695 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames*,x11names*}{xcolor}
+%
+\documentclass[
+  12pt,
+]{article}
+\usepackage[sc, osf]{mathpazo}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  filecolor=Maroon,
+  citecolor=Blue,
+  urlcolor=blue,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+\newcommand{\bquote}{\begin{quote}}
+\newcommand{\equte}{\end{quote}}
+\newcommand{\cc}{\centering}
+\newcommand{\bdquote}{\begin{displayquote}}
+\newcommand{\edquote}{\end{displayquote}}
+\newcommand{\txtq}{\end{textquote}}
+\usepackage{csquotes}
+\usepackage{textcomp}
+\usepackage{fontawesome5}
+\newcommand{\inlinecode}{\texttt}
+\newcommand{\typelatex}{\LaTeX}
+\newcommand{\vspaceone}{\vspace{1 mm}}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+\title{Silver Commodity Market Timing--\\
+A Simple Macroeconomic Model}
+\author{By \href{https://www.linkedin.com/in/christian-satzky/}{Christian
+Satzky, FRM}\\
+Email: \href{mailto:c.satzky@gmail.com}{\nolinkurl{c.satzky@gmail.com}}}
+\date{Last update: 2 May 2021}
+
+\begin{document}
+\maketitle
+
+\newpage
+\hypersetup{linkcolor=black}
+\tableofcontents
+\newpage
+\hypersetup{linkcolor=blue}
+
+\hypertarget{introduction}{%
+\section{Introduction}\label{introduction}}
+
+The silver commodity is a long-established constituent of the precious
+metals market. It typically provides investors with greater volatility
+than what is commonly observed in the gold market. In this article, I
+investigate the determinants of the spot silver price and provide a
+valuable tool for industry practitioners.
+
+In the following, I first present a simple, theoretical pricing model.
+Secondly, I am empirically investigating key properties of this model by
+using recent market data. From these findings, I finally construct a
+statistical fair-value indicator for the silver spot price. This
+indicator conveniently absorbs statistically significant macroeconomic
+information that is relevant to silver spot pricing.
+
+All results are fully reproducible. All data and code are available on
+my
+\href{https://github.com/csatzky/silver-commodity-market-timing}{GitHub
+repo}.\footnote{URL:
+  \url{https://github.com/csatzky/silver-commodity-market-timing}}
+
+\hypertarget{silver-spot-pricing-hypothesis}{%
+\section{Silver Spot Pricing
+Hypothesis}\label{silver-spot-pricing-hypothesis}}
+
+The silver commodity (spot symbol: \texttt{\^{}XAGUSD}) can be thought
+of in terms of a zero-coupon paying bond with an infinite time to
+maturity. Assuming cashing-out within finite time, I am interested in
+the asset's spot price at the end of the arbitrary holding period,
+\(T\).
+
+In most simplistic terms, any physical asset appreciates/depreciates in
+nominal value with inflation/deflation. It follows that the future
+silver spot price, \(P_T\), is a function of the spot price at the
+beginning of the investment period, \(P_0\), and USD inflation, \(i\).
+In addition, there might be some \(n\) other dependencies, which might
+be observable or not, and where it is unknown whether these have a
+positive or negative impact on \(P_T\). These are included in the vector
+\(X_n\), \(X_n = [x_1, x_2,..., x_n]\).
+
+\[P_{T} = f(P_{0}, i, X_n)\]
+
+Assuming continuous-time, we can discount the future spot price,
+\(P_T\), to the current spot price, \(P_t\), using the risk-free USD
+interest rate \(r\).\footnote{This implicitly assumes risk-neutrality,
+  which further assumes an arbitrage-free market.}
+
+\begin{align}
+P_t = \frac{f(P_{0}, i, X_n)}{e^{r(T-t)}}
+\end{align}
+
+For illustration purposes, let's assume that
+\(f(P_0, i, X_n) = P_0 e^{i(T-t)}\), thereby setting the parameters for
+the vector of unknown variables \(X_n\) to zero.
+
+\[P_t = \frac{P_0 e^{i(T-t)}}{e^{r(T-t)}}\]
+
+The partial derivatives with respect to inflation, \(i\), and the
+risk-free USD interest rate, \(r\), yield:
+
+\[\frac{\partial P_{t}}{\partial i} = \frac{(T-t)P_0 e^{i(T-t)}}{e^{r(T-t)}}\]
+
+\[\frac{\partial P_{t}}{\partial r} = \frac{(t-T)P_0 e^{i(T-t)}}{e^{r(T-t)}}\]
+
+Note that \(P_0, t, T > 0\) and \(T>t\). Thus,
+
+\begin{align}
+\textbf{1.} \hspace{5mm} \frac{\partial P_{t}}{\partial i} &> 0 \notag\\
+\textbf{2.} \hspace{5mm} \frac{\partial P_{t}}{\partial r} &< 0 \notag
+\end{align}
+
+Hence, I have established that,
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The silver spot price, \(P_t\), \emph{increases} with rising USD
+  inflation, \(i\)
+\item
+  The silver spot price, \(P_t\), \emph{decreases} with rising risk-free
+  USD rates, \(r\).
+\end{enumerate}
+
+\vspace{5 mm}
+
+\textbf{\emph{A Word of Caution}}
+
+Let's denote \(s\) the \emph{spread} between USD inflation and the USD
+risk-free rate, \(s = i - r\). It is \emph{tempting} to say, whenever
+the \emph{change} in the inflation-rate spread, \(s\), is
+\emph{positive}, \(P_t\) is increasing. In other words, whenever the
+change in inflation is greater than the change in the interest rate, the
+silver price, \(P_t\) is rising:
+
+\[\Delta s >0 \implies \Delta P_t > 0\]
+
+However, it is important to understand that we cannot make such claim.
+Remember that the exact form of \(f(P_0, i, X_n)\) in equation (1) is
+\emph{unknown}. Hence, we cannot infer that \(\Delta i\) and
+\(\Delta r\) have an \emph{equal} impact on \(P_t\). However, the exact
+impact can be estimated using data, which is done in the next section.
+
+\newpage
+
+\hypertarget{empirical-validation}{%
+\section{Empirical Validation}\label{empirical-validation}}
+
+In the following, I am empirically investigating the
+\protect\hyperlink{silver-spot-pricing-hypothesis}{silver spot pricing
+hypthesis} from the previous section. Hence, it is necessary to find
+real-world proxies for USD inflation and USD risk-free rate.
+
+When it comes to inflation, I am using the 10-year Breakeven Inflation
+Rate by the Federal Reserve Bank of St.~Louis.\footnote{Federal Reserve
+  Bank of St.~Louis, 10-Year Breakeven Inflation Rate {[}T5YIE{]},
+  retrieved from FRED, Federal Reserve Bank of St.~Louis;
+  \url{https://fred.stlouisfed.org/series/T5YIE}, April 9, 2021.} At
+each point in time, this rate represents the \emph{expected inflation}
+over the next 10 years. Hence, a \emph{change} in the Breakeven
+Inflation Rate can be interpreted as a change in expected inflation,
+which is a stationary, \(I(0)\) time-series variable. This rate is
+derived from 10-year US Treasury bonds with and without inflation
+protection.
+
+When it comes to the risk-free rate, I am using 10-year US treasury bond
+rates, which are not indexed for inflation.\footnote{Board of Governors
+  of the Federal Reserve System (US), 10-Year Treasury Constant Maturity
+  Rate {[}DGS10{]}, retrieved from FRED, Federal Reserve Bank of
+  St.~Louis; \url{https://fred.stlouisfed.org/series/DGS10}, April 9,
+  2021.}
+
+This selection implies a finite-time holding horizon of 10-years for
+this commodity.
+
+For daily data of the last 3 years (from 1 April 2018 to 31 March 2021),
+I am fitting the following linear regression model:
+
+\begin{align}
+\Delta P_t = \hat\beta^{_i} \Delta i_t + \hat\beta^{_r} \Delta r_t + \epsilon_t
+\end{align}
+
+\begin{footnotesize}
+Where:
+
+\begin{tabular}{ll}
+
+$P_t$ & Daily XAGUSD exchange rate\\
+$\Delta P_t$ & Continuously compounded return of $\scriptstyle P_t$, $\scriptstyle ln \left( \frac{P_t}{P_{t-1}} \right)$\\
+$\Delta i_t$ & Change in the 10-year Breakeven Inflation rate, $\scriptstyle i_t - i_{t-1}$\\
+$\Delta r_t$ & Change in the 10-year Treasury rate, $\scriptstyle r_t - r_{t-1}$\\
+$\epsilon_t$ & Error term, $E[\epsilon_t] = 0$\\
+
+\end{tabular}
+\end{footnotesize}
+
+Note that all variables \(\Delta P_t\), \(\Delta i_t\), and
+\(\Delta r_t\) are \emph{stationary}, \(I(0)\) time-series. Hence, the
+linear regression results below do not suffer from spurious regression,
+and t-values, \(R^2\), and \(\beta\) estimates are reliable and
+distributed as expected.
+
+\begin{table}[!h]
+
+\caption{\label{tab:lm-fit}Linear Regression Results}
+\centering
+\begin{tabular}[t]{lrrrr}
+\toprule
+  & $\hat{\beta}$ & $\textrm{SE}(\hat{\beta})$ & $\textrm{t-value}$ & $\textrm{p-value}$\\
+\midrule
+$\Delta i_t$ & 0.1999 & 0.0235 & 8.5240 & <0.001\\
+$\Delta r_t$ & -0.1017 & 0.0165 & -6.1752 & <0.001\\
+\bottomrule
+\multicolumn{5}{l}{\rule{0pt}{1em}$\textit{Adj Rsq: 0.0961}$}\\
+\end{tabular}
+\end{table}
+
+The linear regression model in (2) explains roughly 10\% of the total
+variation in the Silver spot price return. In terms of regression in
+differences, this is a remarkably convincing result. Using the linear
+regression output, we can use statistical theory to (in-)validate the
+\protect\hyperlink{silver-spot-pricing-hypothesis}{hypotheses} made in
+the previous section. For the \emph{true} value of \(\beta\), we are
+interested whether \(\beta^{_i} > 0\) and \(\beta^{_r} < 0\). These
+one-sided Frequentist hypothesis tests are carried out below.
+
+\textbf{\emph{Hypothesis Test for Inflation-Beta}}
+
+\begin{align}
+\mathbf{H_0}: \hspace{5mm} \beta^{_i} &\leq 0 \notag\\
+\mathbf{H_1}: \hspace{5mm} \beta^{_i} &> 0 \notag
+\end{align}
+
+\[P[ \textrm{data} | \beta^{_i} \leq 0] = P[T_{\textrm{df=}752} > 8.52] \mathbf{< 0.001}\]
+
+Given \(H_0\) is true, the probability of observing this data (or more
+extreme) is \(< 0.001\). Hence, I reject \(H_0\) for \emph{all common
+levels of statistical significance} and accept that \(\beta^{_i} > 0\).
+
+\vspace{5 mm}
+
+\textbf{\emph{Hypothesis Test for Risk-Free Rate-Beta}}
+
+\begin{align}
+\mathbf{H_0}: \hspace{5mm} \beta^{_r} &\geq 0 \notag\\
+\mathbf{H_1}: \hspace{5mm} \beta^{_r} &< 0 \notag
+\end{align}
+
+\[P[ \textrm{data} | \beta^{_r} \geq 0] = P[T_{\textrm{df=}752} < -6.18] \mathbf{< 0.001}\]
+
+Given \(H_0\) is true, the probability of observing this data (or more
+extreme) is \(< 0.001\). Hence, I reject \(H_0\) for \emph{all common
+levels of statistical significance} and accept that \(\beta^{_r} < 0\).
+
+The results of the hypothesis tests provide strong statistical evidence
+that the two statements derived from the partial derivatives
+\protect\hyperlink{silver-spot-pricing-hypothesis}{in the previous
+section} are true.
+
+In summary, I found that;
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The silver price \emph{increases} with rising expected inflation. This
+  is backed by strong statistical evidence.
+\item
+  The silver price \emph{decreases} with rising 10Y US treasury rates.
+  This is backed by strong statistical evidence.
+\item
+  The silver price is estimated to be \emph{twice as sensitive} to
+  changes in inflation than it is to changes in US treasury rates.
+\end{enumerate}
+
+\newpage
+
+\hypertarget{construction-of-a-fair-value-silver-indicator}{%
+\section{Construction of a Fair-Value Silver
+Indicator}\label{construction-of-a-fair-value-silver-indicator}}
+
+According to the linear regression model of the previous section;
+
+\[\widehat{\Delta P_t} = 0.2 \Delta i_t -0.1 \Delta r_t\].
+
+Hence,
+
+\[\mathbb{E}[0.2 \Delta i - 0.1 \Delta r - \Delta P_t] = 0\]
+
+The equation within the expectation can be used to construct a
+fundamental Silver spot price indicator. The rolling-time period,
+\(\Delta\), can be arbitrarily chosen, e.g.~15 trading days (resembling
+3 weeks). The daily indicator value is then computed as
+follows:\footnote{Note that continuously compounded returns are additive}
+
+\[0.2 [i_t-i_{t-15}] - 0.1[r_t - r_{t-15}] - ln \left( \frac{P_t}{P_{t-15}} \right)\]
+
+It might be convenient to think of the indicator's values in terms of
+simple compounding return. Hence the indicator can be transformed to
+reflect that:
+
+\[\text{I}^S_t=100\left( \exp \left[ 0.2 (i_t-i_{t-15}) - 0.1(r_t - r_{t-15}) - ln \left( \frac{P_t}{P_{t-15}} \right) \right] -1 \right)\]
+
+The Silver Indicator, \(I^S_t\), can be interpreted as the
+\emph{fundamentally} expected percentage return over the next 3 weeks:
+
+\begin{itemize}
+\tightlist
+\item
+  \(I^S_t > 0\): The current silver spot price is \emph{fundamentally
+  undervalued}
+\item
+  \(I^S_t < 0\): The current silver spot price is \emph{fundamentally
+  overvalued}
+\item
+  \(I^S_t = 0\): The current silver spot price trades at fair value
+\end{itemize}
+
+\vspace{5 mm}
+
+\textbf{\emph{Limitations}}
+
+Acknowledge that the \(I^S_t\) is \emph{only} based on developments of
+the USD risk-free rate and the expected USD inflation. There is
+\protect\hyperlink{empirical-validation}{reasonable statistical
+evidence} to use these two macroeconomic variables. Any other potential
+factors (e.g.~sentiment, other macroeconomic variables, storage cost,
+etc) are neglected. This is due to a lack of data availability and/or a
+lack of sensible theoretical considerations to include such additional
+variables.
+
+Note that whenever \(I^S_t \neq 0\), \(I^S_t\) \emph{must} eventually
+revert to \(0\). This happens because of any of the following reasons:
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\tightlist
+\item
+  The silver spot price will move such that \(I^S_t \to 0\), yielding a
+  statistical arbitrage opportunity in the silver market
+\item
+  The \emph{future} expected inflation will move such that
+  \(I^S_t \to 0\)
+\item
+  The \emph{future} risk-free USD rate will move such that
+  \(I^S_t \to 0\)
+\item
+  The market fails to properly reflect macroeconomic changes within the
+  3-week rolling indicator window
+\item
+  A combination of any of the above
+\end{enumerate}
+
+Regardless of these limitations, the indicator performs well in
+explaining the silver spot price movements from 2019--2021. Below is a
+plot of the silver spot price (\texttt{\^{}XAGUSD}) against \(I^S_t\).
+
+\includegraphics{silver-market-timing_files/figure-latex/silver-indicator-1.pdf}
+
+Observe that,
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \(I^S_t\) is mean-reverting around zero
+\item
+  Whenever \(I^S_t\) diverges significantly away from zero, this
+  indicates strong buy/sell signals, which in part materialize in
+  subsequent \texttt{\^{}XAG/USD} movements
+\end{enumerate}
+
+Hence, the \(I^S_t\) indicator can be used to absorb and compare the
+information given by the most crucial macroeconomic variables versus the
+actual price changes.
+
+\newpage
+
+\hypertarget{silver-market-timing-using-is_t}{%
+\subsection{\texorpdfstring{Silver Market Timing Using
+\(I^S_t\)}{Silver Market Timing Using I\^{}S\_t}}\label{silver-market-timing-using-is_t}}
+
+To avoid signals in the \(I^S_t\) that are due to noise, let's
+arbitrarily define a fundamental buy/sell signal whenever
+\(|I^S_t| \ge 10\).
+
+In the plot below, all values \(I^S_t \leq -10\) are highlighted in red
+(i.e.~\emph{sell} signal), and values \(I^S_t \geq 10\) are highlighted
+in green (i.e.~\emph{buy} signal).
+
+\includegraphics{silver-market-timing_files/figure-latex/highlighted-plot-1.pdf}
+
+Remember that this indicator signals diversions from the estimated
+\emph{macroeconomically justifiable} fair-value price. For greater
+detail, in the \protect\hyperlink{appendix-zoomed-plots}{appendix} I am
+providing zoomed-in plots over specific time periods.
+
+\hypertarget{a-note-on-crypto-currency}{%
+\section{A Note on Crypto-Currency}\label{a-note-on-crypto-currency}}
+
+Below is a plot depicting the 10-year US expected inflation\footnote{Federal
+  Reserve Bank of St.~Louis, 10-Year Breakeven Inflation Rate
+  {[}T5YIE{]}, retrieved from FRED, Federal Reserve Bank of St.~Louis;
+  \url{https://fred.stlouisfed.org/series/T5YIE}, April 9, 2021.} (top),
+the Bitcoin spot price, \texttt{BTC/USD} (middle), and the silver spot
+price, \texttt{XAG/USD} (bottom) from January 2020 to December 2020.
+
+\includegraphics{silver-market-timing_files/figure-latex/bitcoin-1.pdf}
+From January 2020 to November 2020, \texttt{BTC/USD} and
+\texttt{XAG/USD} shared similar price developments. Both assets seemed
+to be driven by a rise in expected inflation. It can be inferred that,
+similar to silver, \texttt{BTC/USD} provides inflation protection. On
+these terms, \texttt{BTC/USD} can be considered a \emph{low transaction
+cost} and \emph{zero storage cost} competitor to the silver commodity.
+
+However, after October 2020, \texttt{BTC/USD} appreciated greatly
+without macroeconomic justification. More specifically, \texttt{BTC/USD}
+rose from USD 11,736 on 19 October 2020 to roughly USD 30,000 by the end
+of the year. On 12 April 2021, it reached more than USD 60,000.
+Simultaneously, the overall crypto currency market had an increase in
+market capitalization proportionally to the \texttt{BTC/USD}
+appreciation.
+
+\textbf{Opinion:} The risk for the silver commodity is that some of it's
+potential market capitalization for inflation-protection might be
+substituted for investment in cryptocurrency. Hence, further gain in
+acceptance and trust in cryptocurrency for the purpose of preserving
+value might, in part, drive away demand from the silver commodity
+market.
+
+\newpage
+
+\hypertarget{conclusion}{%
+\section{Conclusion}\label{conclusion}}
+
+In this article, I validate how long-term risk-free rates and inflation
+are determinants of the silver spot price. More specifically, empirical
+analysis suggests that the silver spot price is roughly \emph{twice} as
+sensitive to changes in USD expected inflation than it is to changes in
+the 10-year U.S. Treasury rate.
+
+When it comes to silver market-timing, it can be concluded the
+following:
+
+\textbf{A Strong Bullish \texttt{XAG/USD} Case}
+
+\begin{itemize}
+\tightlist
+\item
+  A silver indicator value \(I^S_t \geq 10\)
+\item
+  An \emph{unexpected} rise in inflation\footnote{Note that a rise in
+    \emph{expected inflation} is incorporated in the silver indicator
+    \(I^S_t\)}
+\item
+  A \emph{future} decrease in long-term risk-free rate\footnote{Note
+    that a decrease in the long-term risk-free rate is incorporated in
+    the silver indicator \(I^S_t\)}
+\item
+  An \emph{increase} in demand for silver as a resource for production
+\item
+  A \emph{decrease} in trust in cryptocurrency
+\end{itemize}
+
+\textbf{A Strong Bearish \texttt{XAG/USD} Case}
+
+\begin{itemize}
+\tightlist
+\item
+  A silver indicator value \(I^S_t \leq -10\)
+\item
+  An \emph{unexpected} decrease in inflation\footnote{Note that a
+    decrease in \emph{expected inflation} is incorporated in the silver
+    indicator \(I^S_t\)}
+\item
+  A \emph{future} increase in long-term risk-free rate\footnote{Note
+    that a rise in the long-term risk-free rate is incorporated in the
+    silver indicator \(I^S_t\)}
+\item
+  A \emph{decrease} in demand for silver as a resource for production
+\item
+  A continued \emph{increase} in trust and acceptance in cryptocurrency
+\end{itemize}
+
+\hypertarget{appendix-zoomed-plots}{%
+\section*{Appendix: Zoomed Plots}\label{appendix-zoomed-plots}}
+\addcontentsline{toc}{section}{Appendix: Zoomed Plots}
+
+\includegraphics{silver-market-timing_files/figure-latex/highlighted-plot2-1.pdf}
+
+\includegraphics{silver-market-timing_files/figure-latex/highlighted-plot3-1.pdf}
+
+\includegraphics{silver-market-timing_files/figure-latex/highlighted-plot5-1.pdf}
+
+\newpage
+
+\hypertarget{disclaimer}{%
+\section*{Disclaimer}\label{disclaimer}}
+\addcontentsline{toc}{section}{Disclaimer}
+
+This article has been prepared and issued by Christian Satzky (CS).
+
+\emph{Accuracy of content:} All information used in the publication of
+this report has been compiled from publicly available sources that are
+believed to be reliable, however I do not guarantee the accuracy or
+completeness of this report and have not sought for this information to
+be independently verified. Opinions contained in this report represent
+those of CS at the time of publication. Forward-looking information or
+statements in this report contain information that is based on
+assumptions, forecasts of future results, estimates of amounts not yet
+determinable, and therefore involve known and unknown risks,
+uncertainties and other factors which may cause the actual results,
+performance or achievements of their subject matter to be materially
+different from current expectations.
+
+\emph{Exclusion of Liability:} To the fullest extent allowed by law, CS
+shall not be liable for any direct, indirect or consequential losses,
+loss of profits, damages, costs or expenses incurred or suffered by you
+arising out or in connection with the access to, use of or reliance on
+any information contained on this note. This article does not constitute
+investment advice.
+
+\emph{No investment advice:} The information that I provide should not
+be considered in any manner whatsoever as investment advice. Also, the
+information provided by me should not be construed by any reader to
+effect, or attempt to effect, any transaction in a security.
+
+\emph{Investment in securities mentioned:} CS does not himself hold any
+positions in the securities mentioned in this report.
+
+\emph{Copyright:} Copyright 2021 Christian Satzky (CS). No further
+distribution of this work is permitted without Christian Satzky's
+express written consent.
+
+\newpage
+
+\hypertarget{references}{%
+\section*{References}\label{references}}
+\addcontentsline{toc}{section}{References}
+
+\hypertarget{refs}{}
+\leavevmode\hypertarget{ref-zoo}{}%
+Achim Zeileis. 2021. \emph{Package ``Zoo''}.
+\url{https://cran.r-project.org/web/packages/zoo/}.
+
+\leavevmode\hypertarget{ref-ggthemes}{}%
+Arnold, J. B. et al. 2019. \emph{Package ``Ggthemes''}.
+\url{https://cran.r-project.org/web/packages/ggthemes/ggthemes.pdf}.
+
+\leavevmode\hypertarget{ref-gridExtra}{}%
+Auguie, B. 2017. \emph{Package ``gridExtra''}.
+\url{https://cran.r-project.org/web/packages/gridExtra/gridExtra.pdf}.
+
+\leavevmode\hypertarget{ref-FedInt}{}%
+Board of Governors of the Federal Reserve System (US). n.d.
+\emph{10-Year Treasury Constant Maturity Rate {[}Dgs10{]}}. Federal
+Reserve Bank of St. Louis.
+\url{https://fred.stlouisfed.org/series/DGS10}.
+
+\leavevmode\hypertarget{ref-dt}{}%
+Dowle, M. et al. 2020. \emph{Package ``Data.table''}.
+\url{https://cran.r-project.org/web/packages/data.table/data.table.pdf}.
+
+\leavevmode\hypertarget{ref-FedExpInfl}{}%
+FRED. n.d. \emph{10-Year Breakeven Inflation Rate {[}T5yie{]}}. Federal
+Reserve Bank of St. Louis.
+\url{https://fred.stlouisfed.org/series/T5YIE}.
+
+\leavevmode\hypertarget{ref-stringr}{}%
+Hadley Wickham. 2019. \emph{Package ``Stringr''}.
+\url{https://cran.r-project.org/web/packages/stringr/}.
+
+\leavevmode\hypertarget{ref-scales}{}%
+Hadley Wickham, Dana Seidel, RStudio. 2020. \emph{Package ``Scales''}.
+\url{https://cran.r-project.org/web/packages/scales/}.
+
+\leavevmode\hypertarget{ref-kableExtra}{}%
+Hao Zhu. 2021. \emph{Package ``kableExtra''}.
+\url{https://cran.r-project.org/web/packages/kableExtra/}.
+
+\leavevmode\hypertarget{ref-matrixStats}{}%
+Henrik Bengtsson. 2021. \emph{Package ``matrixStats''}.
+\url{https://cran.r-project.org/web/packages/matrixStats/}.
+
+\leavevmode\hypertarget{ref-iriz}{}%
+Irizarry, Rafael A. 2020. \emph{Introduction to Data Science}.
+\url{https://rafalab.github.io/dsbook/}.
+
+\leavevmode\hypertarget{ref-caTools}{}%
+Jarek Tuszynski. 2021. \emph{Package ``caTools''}.
+\url{https://cran.r-project.org/web/packages/caTools/}.
+
+\leavevmode\hypertarget{ref-xts}{}%
+Jeffrey A. Ryan. 2020. \emph{Package ``Xts''}.
+\url{https://cran.r-project.org/web/packages/xts/}.
+
+\leavevmode\hypertarget{ref-RcppRoll}{}%
+Kevin Ushey. 2018. \emph{Package ``Rcpproll''}.
+\url{https://cran.r-project.org/web/packages/RcppRoll/}.
+
+\leavevmode\hypertarget{ref-R-base}{}%
+R Core Team. 2020. \emph{R: A Language and Environment for Statistical
+Computing}. Vienna, Austria: R Foundation for Statistical Computing.
+\url{https://www.R-project.org}.
+
+\leavevmode\hypertarget{ref-fasttime}{}%
+Simon Urbanek. 2016. \emph{Package ``Fasttime''}.
+\url{https://cran.r-project.org/web/packages/fasttime/}.
+
+\leavevmode\hypertarget{ref-lubridate}{}%
+Spinu, V. 2020. \emph{Package ``Lubridate''}.
+\url{https://cran.r-project.org/web/packages/lubridate/lubridate.pdf}.
+
+\leavevmode\hypertarget{ref-tidyverse}{}%
+Wickham, H. 2019. \emph{Package ``Tidyverse''}.
+\url{https://cran.r-project.org/web/packages/tidyverse/tidyverse.pdf}.
+
+\leavevmode\hypertarget{ref-extrafont}{}%
+Winston Chang. 2014. \emph{Package ``Extrafont''}.
+\url{https://cran.r-project.org/web/packages/extrafont/}.
+
+\leavevmode\hypertarget{ref-knitr}{}%
+Xie, Y. et al. 2020. \emph{Package ``Knitr''}.
+\url{https://cran.r-project.org/web/packages/knitr/knitr.pdf}.
+
+\end{document}

@@ -1,0 +1,756 @@
+---
+title: |
+  | Silver Commodity Market Timing--
+  | A Simple Macroeconomic Model
+author: | 
+  | By [Christian Satzky, FRM](https://www.linkedin.com/in/christian-satzky/)
+  | Email: [c.satzky@gmail.com](mailto:c.satzky@gmail.com)
+date: "Last update: 2 May 2021"
+output:
+  pdf_document:
+    keep_tex: yes
+    number_sections: true
+geometry: margin=1in
+fontfamily: mathpazo
+fontfamilyoptions: sc, osf
+fontsize: 12pt
+linkcolor: blue
+urlcolor: blue
+bibliography: references_silver_market_timing.bib
+nocite: '@*'
+
+header-includes:
+- \newcommand{\bquote}{\begin{quote}}
+- \newcommand{\equte}{\end{quote}}
+- \newcommand{\cc}{\centering}
+- \newcommand{\bdquote}{\begin{displayquote}}
+- \newcommand{\edquote}{\end{displayquote}}
+- \newcommand{\txtq}{\end{textquote}}
+- \usepackage{csquotes}
+- \usepackage{textcomp}
+- \usepackage{fontawesome5}
+- \newcommand{\inlinecode}{\texttt}
+- \newcommand{\typelatex}{\LaTeX}
+- \newcommand{\vspaceone}{\vspace{1 mm}}
+---
+
+\newpage
+\hypersetup{linkcolor=black}
+\tableofcontents
+\newpage
+\hypersetup{linkcolor=blue}
+
+```{r load-libs, include = FALSE}
+# set-up code chunks' visibility
+knitr::opts_chunk$set(echo = FALSE,
+                      tidy=TRUE,
+                      warning = FALSE, message = FALSE)
+
+# load/install required libraries
+if(!require(kableExtra)) install.packages("kableExtra", repos = "http://cran.us.r-project.org")
+if(!require(gridExtra)) install.packages("gridExtra", repos = "http://cran.us.r-project.org")
+if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.org")
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(grid)) install.packages("grid", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
+if(!require(ggthemes)) install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+if(!require(fasttime)) install.packages("fasttime", repos = "http://cran.us.r-project.org")
+if(!require(stringr)) install.packages("stringr", repos = "http://cran.us.r-project.org")
+if(!require(RcppRoll)) install.packages("RcppRoll", repos = "http://cran.us.r-project.org")
+if(!require(caTools)) install.packages("caTools", repos = "http://cran.us.r-project.org")
+if(!require(zoo)) install.packages("zoo", repos = "http://cran.us.r-project.org")
+if(!require(xts)) install.packages("xts", repos = "http://cran.us.r-project.org")
+if(!require(scales)) install.packages("scales", repos = "http://cran.us.r-project.org")
+if(!require(extrafront)) install.packages("extrafront", repos = "http://cran.us.r-project.org")
+if(!require(matrixStats)) install.packages("matrixStats", repos = "http://cran.us.r-project.org")
+if(!require(tidyr)) install.packages("tidyr", repos = "http://cran.us.r-project.org")
+if(!require(broom)) install.packages("broom", repos = "http://cran.us.r-project.org")
+if(!require(stargazer)) install.packages("stargazer", repos = "http://cran.us.r-project.org")
+library(scales)
+library(extrafont)
+library(kableExtra)
+library(gridExtra)
+library(knitr)
+library(tidyverse)
+library(grid)
+library(data.table)
+library(lubridate)
+library(ggthemes)
+library(fasttime)
+library(stringr)
+library(RcppRoll)
+library(caTools)
+library(zoo)
+library(xts)
+library(matrixStats)
+library(tidyr)
+library(broom)
+library(stargazer)
+```
+
+# Introduction
+
+The silver commodity is a long-established constituent of the precious metals market. It typically provides investors with greater volatility than what is commonly observed in the gold market. In this article, I investigate the determinants of the spot silver price and provide a valuable tool for industry practitioners.
+
+In the following, I first present a simple, theoretical pricing model. Secondly, I am empirically investigating key properties of this model by using recent market data. From these findings, I finally construct a statistical fair-value indicator for the silver spot price. This indicator conveniently absorbs statistically significant macroeconomic information that is relevant to silver spot pricing.
+
+All results are fully reproducible. All data and code are available on my [GitHub repo](https://github.com/csatzky/silver-commodity-market-timing).^[URL: https://github.com/csatzky/silver-commodity-market-timing]
+
+# Silver Spot Pricing Hypothesis
+
+The silver commodity (spot symbol: `^XAGUSD`) can be thought of in terms of a zero-coupon paying bond with an infinite time to maturity. Assuming cashing-out within finite time, I am interested in the asset's spot price at the end of the arbitrary holding period, $T$. 
+
+In most simplistic terms, any physical asset appreciates/depreciates in nominal value with inflation/deflation. It follows that the future silver spot price, $P_T$, is a function of the spot price at the beginning of the investment period, $P_0$, and USD inflation, $i$. In addition, there might be some $n$ other dependencies, which might be observable or not, and where it is unknown whether these have a positive or negative impact on $P_T$. These are included in the vector $X_n$, $X_n = [x_1, x_2,..., x_n]$.
+
+$$P_{T} = f(P_{0}, i, X_n)$$
+
+Assuming continuous-time, we can discount the future spot price, $P_T$, to the current spot price, $P_t$, using the risk-free USD interest rate $r$.^[This implicitly assumes risk-neutrality, which further assumes an arbitrage-free market.]
+
+\begin{align}
+P_t = \frac{f(P_{0}, i, X_n)}{e^{r(T-t)}}
+\end{align}
+
+For illustration purposes, let's assume that $f(P_0, i, X_n) = P_0 e^{i(T-t)}$, thereby setting the parameters for the vector of unknown variables $X_n$ to zero.
+
+$$P_t = \frac{P_0 e^{i(T-t)}}{e^{r(T-t)}}$$
+
+The partial derivatives with respect to inflation, $i$, and the risk-free USD interest rate, $r$, yield:
+
+$$\frac{\partial P_{t}}{\partial i} = \frac{(T-t)P_0 e^{i(T-t)}}{e^{r(T-t)}}$$
+
+$$\frac{\partial P_{t}}{\partial r} = \frac{(t-T)P_0 e^{i(T-t)}}{e^{r(T-t)}}$$
+
+Note that $P_0, t, T > 0$ and $T>t$. Thus,
+
+\begin{align}
+\textbf{1.} \hspace{5mm} \frac{\partial P_{t}}{\partial i} &> 0 \notag\\
+\textbf{2.} \hspace{5mm} \frac{\partial P_{t}}{\partial r} &< 0 \notag
+\end{align}
+
+Hence, I have established that,
+
+1. The silver spot price, $P_t$, _increases_ with rising USD inflation, $i$
+2. The silver spot price, $P_t$, _decreases_ with rising risk-free USD rates, $r$.
+
+\vspace{5 mm}
+
+***A Word of Caution***
+
+Let's denote $s$ the _spread_ between USD inflation and the USD risk-free rate, $s = i - r$. It is _tempting_ to say, whenever the _change_ in the inflation-rate spread, $s$, is _positive_, $P_t$ is increasing. In other words, whenever the change in inflation is greater than the change in the interest rate, the silver price, $P_t$ is rising:
+
+$$\Delta s >0 \implies \Delta P_t > 0$$
+
+However, it is important to understand that we cannot make such claim. Remember that the exact form of $f(P_0, i, X_n)$ in equation (1) is _unknown_. Hence, we cannot infer that $\Delta i$ and $\Delta r$ have an _equal_ impact on $P_t$. However, the exact impact can be estimated using data, which is done in the next section.
+
+\newpage
+
+# Empirical Validation
+
+In the following, I am empirically investigating the [silver spot pricing hypthesis][Silver Spot Pricing Hypothesis] from the previous section. Hence, it is necessary to find real-world proxies for USD inflation and USD risk-free rate.
+
+When it comes to inflation, I am using the 10-year Breakeven Inflation Rate by the Federal Reserve Bank of St. Louis.^[Federal Reserve Bank of St. Louis, 10-Year Breakeven Inflation Rate [T5YIE], retrieved from FRED, Federal Reserve Bank of St. Louis; https://fred.stlouisfed.org/series/T5YIE, April 9, 2021.] At each point in time, this rate represents the _expected inflation_ over the next 10 years. Hence, a _change_ in the Breakeven Inflation Rate can be interpreted as a change in expected inflation, which is a stationary, $I(0)$ time-series variable. This rate is derived from 10-year US Treasury bonds with and without inflation protection.
+
+When it comes to the risk-free rate, I am using 10-year US treasury bond rates, which are not indexed for inflation.^[Board of Governors of the Federal Reserve System (US), 10-Year Treasury Constant Maturity Rate [DGS10], retrieved from FRED, Federal Reserve Bank of St. Louis; https://fred.stlouisfed.org/series/DGS10, April 9, 2021.]
+
+This selection implies a finite-time holding horizon of 10-years for this commodity.
+
+For daily data of the last 3 years (from 1 April 2018 to 31 March 2021), I am fitting the following linear regression model:
+
+\begin{align}
+\Delta P_t = \hat\beta^{_i} \Delta i_t + \hat\beta^{_r} \Delta r_t + \epsilon_t
+\end{align}
+
+\begin{footnotesize}
+Where:
+```{r capm-notation}
+notation_capm <- data.frame(c("$P_t$", "$\\Delta P_t$", "$\\Delta i_t$", "$\\Delta r_t$", "$\\epsilon_t$"),
+                        c("Daily XAGUSD exchange rate", "Continuously compounded return of $\\scriptstyle P_t$, $\\scriptstyle ln \\left( \\frac{P_t}{P_{t-1}} \\right)$", "Change in the 10-year Breakeven Inflation rate, $\\scriptstyle i_t - i_{t-1}$", "Change in the 10-year Treasury rate, $\\scriptstyle r_t - r_{t-1}$", "Error term, $E[\\epsilon_t] = 0$"))
+ #                       c("\\inlinecode{data.table}, \\inlinecode{ggplot2}, \\inlinecode{dplyr}, \\inlinecode{caret}", "\\inlinecode{Scitkit-Learn}, \\inlinecode{Numpy}, \\inlinecode{datatable}, \\inlinecode{Matplotlib}"))
+
+#names(fav_libs)[1:3] <- c("", "", "Favorite Libraries")
+
+kable(notation_capm, escape = FALSE, booktabs=TRUE, col.names = NULL) %>%
+  kable_styling(position = "left") %>% 
+  sub("\\\\toprule", "", .) %>%
+  sub("\\\\bottomrule", "", .)
+```
+\end{footnotesize}
+
+Note that all variables $\Delta P_t$, $\Delta i_t$, and $\Delta r_t$ are _stationary_, $I(0)$ time-series. Hence, the linear regression results below do not suffer from spurious regression, and t-values, $R^2$, and $\beta$ estimates are reliable and distributed as expected.
+
+```{r lm-fit}
+# load and wrangle XAG/USD dataset
+xag <- fread("data/xagusd.csv", header = TRUE, stringsAsFactors = FALSE)
+xag <- xag[,.(Time, Last)]
+names(xag) <- c("date", "P_t") # don't filter on 'volume', some have changing prices but 0 vol
+xag[, date := as_datetime(date, format="%m/%d/%Y")]
+xag[, date := as.Date(date)]
+xag <- xag[order(date),]
+
+# load and wrangle FRED data
+it <- fread("data/10-year-breakeven-inflation-rate.csv", header = TRUE, stringsAsFactors = FALSE)
+ut <- fread("data/10-year-treasury.csv", header = TRUE, stringsAsFactors = FALSE)
+names(it) <- c("date", "i_t")
+names(ut) <- c("date", "u_t")
+ut <- ut[, u_t := as.numeric(u_t)]
+it <- it[, i_t := as.numeric(i_t)]
+ut <- ut[!is.na(u_t),]
+it <- it[!is.na(i_t),]
+
+# combine tables
+tbl <- merge(it, ut, by="date")
+tbl <- merge(xag, tbl, by="date")
+
+# delta computation
+tbl[, P_tm1 := shift(P_t,1L)]
+tbl[, i_tm1 := shift(i_t,1L)]
+tbl[, u_tm1 := shift(u_t,1L)]
+tbl[, delta_i_t := i_t - i_tm1]
+tbl[, delta_u_t := u_t - u_tm1]
+tbl[, delta_P_t := log(P_t / P_tm1)]
+tbl <- tbl[which(complete.cases(tbl)),]
+
+result <- lm(delta_P_t ~ delta_i_t + delta_u_t -1, data = tbl[date>=as.Date("2018-04-01") & date<=as.Date("2021-04-20")])
+summary_result <- summary(result)
+
+coef <- as.data.frame(round(summary_result$coefficient,4))
+if(coef[1,4] == 0){
+  coef[1,4] <- "<0.001"}
+if(coef[2,4] == 0){
+  coef[2,4] <- "<0.001"}
+#coef[1,1] <- paste0("$\\textbf{", coef[1,1], "}$")
+#coef[2,1] <- paste0("$\\textbf{", coef[2,1], "}$")
+
+row.names(coef) <- c("$\\Delta i_t$", "$\\Delta r_t$")
+#names(coef) <- c("$\\textbf{\\hat{\\beta}}$", "$\\textrm{SE}(\\hat{\\beta})$", "$t_{\\hat{\\beta}}$", "$P[t_{\\hat{\\beta}}|\\beta = 0]$")
+
+names(coef) <- c("$\\hat{\\beta}$", "$\\textrm{SE}(\\hat{\\beta})$", "$\\textrm{t-value}$", "$\\textrm{p-value}$")
+
+kable(coef, caption = "Linear Regression Results", escape = FALSE, booktabs=TRUE, align = rep("r",5)) %>%
+  kable_styling(position = "center", latex_options = "hold_position") %>%
+  footnote(general_title = "",
+           general = paste0("$\\\\textit{Adj Rsq: ",round(summary_result$r.squared,4),"}$"),
+           escape = FALSE)
+
+# h1 beta > 0
+h0_beta_leq_zero <- round(pt(coef(summary_result)[, 3], result$df, lower = FALSE),3)
+h0_beta_leq_zero[h0_beta_leq_zero=="0"] <- as.character("< 0.001")
+
+# h1 beta < 0
+h0_beta_geq_zero <- round(pt(coef(summary_result)[, 3], result$df, lower = TRUE),3)
+h0_beta_geq_zero[h0_beta_geq_zero=="0"] <- as.character("< 0.001")
+```
+
+The linear regression model in (2) explains roughly 10% of the total variation in the Silver spot price return. In terms of regression in differences, this is a remarkably convincing result. Using the linear regression output, we can use statistical theory to (in-)validate the [hypotheses][Silver Spot Pricing Hypothesis] made in the previous section. For the _true_ value of $\beta$, we are interested whether $\beta^{_i} > 0$ and $\beta^{_r} < 0$. These one-sided Frequentist hypothesis tests are carried out below.
+
+***Hypothesis Test for Inflation-Beta***
+
+\begin{align}
+\mathbf{H_0}: \hspace{5mm} \beta^{_i} &\leq 0 \notag\\
+\mathbf{H_1}: \hspace{5mm} \beta^{_i} &> 0 \notag
+\end{align}
+
+$$P[ \textrm{data} | \beta^{_i} \leq 0] = P[T_{\textrm{df=}`r result$df`} > `r round(coef[1,3],2)`] \mathbf{< 0.001}$$
+
+Given $H_0$ is true, the probability of observing this data (or more extreme) is $< 0.001$. Hence, I reject $H_0$ for _all common levels of statistical significance_ and accept that $\beta^{_i} > 0$.
+
+\vspace{5 mm}
+
+***Hypothesis Test for Risk-Free Rate-Beta***
+
+\begin{align}
+\mathbf{H_0}: \hspace{5mm} \beta^{_r} &\geq 0 \notag\\
+\mathbf{H_1}: \hspace{5mm} \beta^{_r} &< 0 \notag
+\end{align}
+
+$$P[ \textrm{data} | \beta^{_r} \geq 0] = P[T_{\textrm{df=}`r result$df`} < `r round(coef[2,3],2)`] \mathbf{< 0.001}$$
+
+Given $H_0$ is true, the probability of observing this data (or more extreme) is $< 0.001$. Hence, I reject $H_0$ for _all common levels of statistical significance_ and accept that $\beta^{_r} < 0$.
+
+The results of the hypothesis tests provide strong statistical evidence that the two statements derived from the partial derivatives [in the previous section][Silver Spot Pricing Hypothesis] are true.
+
+In summary, I found that;
+
+1. The silver price _increases_ with rising expected inflation. This is backed by strong statistical evidence.
+2. The silver price _decreases_ with rising 10Y US treasury rates. This is backed by strong statistical evidence.
+3. The silver price is estimated to be _twice as sensitive_ to changes in inflation than it is to changes in US treasury rates.
+
+\newpage
+
+# Construction of a Fair-Value Silver Indicator
+
+According to the linear regression model of the previous section;
+
+$$\widehat{\Delta P_t} = 0.2 \Delta i_t -0.1 \Delta r_t$$.
+
+Hence,
+
+$$\mathbb{E}[0.2 \Delta i - 0.1 \Delta r - \Delta P_t] = 0$$
+
+The equation within the expectation can be used to construct a fundamental Silver spot price indicator. The rolling-time period, $\Delta$, can be arbitrarily chosen, e.g. 15 trading days (resembling 3 weeks). The daily indicator value is then computed as follows:^[Note that continuously compounded returns are additive]
+
+$$0.2 [i_t-i_{t-15}] - 0.1[r_t - r_{t-15}] - ln \left( \frac{P_t}{P_{t-15}} \right)$$
+
+It might be convenient to think of the indicator's values in terms of simple compounding return. Hence the indicator can be transformed to reflect that:
+
+$$\text{I}^S_t=100\left( \exp \left[ 0.2 (i_t-i_{t-15}) - 0.1(r_t - r_{t-15}) - ln \left( \frac{P_t}{P_{t-15}} \right) \right] -1 \right)$$
+
+The Silver Indicator, $I^S_t$, can be interpreted as the _fundamentally_ expected percentage return over the next 3 weeks:
+
+* $I^S_t > 0$: The current silver spot price is _fundamentally undervalued_
+* $I^S_t < 0$: The current silver spot price is _fundamentally overvalued_
+* $I^S_t = 0$: The current silver spot price trades at fair value
+
+\vspace{5 mm}
+
+***Limitations***
+
+Acknowledge that the $I^S_t$ is _only_ based on developments of the USD risk-free rate and the expected USD inflation. There is [reasonable statistical evidence][Empirical Validation] to use these two macroeconomic variables. Any other potential factors (e.g. sentiment, other macroeconomic variables, storage cost, etc) are neglected. This is due to a lack of data availability and/or a lack of sensible theoretical considerations to include such additional variables. 
+
+Note that whenever $I^S_t \neq 0$, $I^S_t$ _must_ eventually revert to $0$. This happens because of any of the following reasons:
+
+a. The silver spot price will move such that $I^S_t \to 0$, yielding a statistical arbitrage opportunity in the silver market
+b. The _future_ expected inflation will move such that $I^S_t \to 0$
+c. The _future_ risk-free USD rate will move such that $I^S_t \to 0$
+d. The market fails to properly reflect macroeconomic changes within the 3-week rolling indicator window
+e. A combination of any of the above
+
+Regardless of these limitations, the indicator performs well in explaining the silver spot price movements from 2019--2021. Below is a plot of the silver spot price (`^XAGUSD`) against $I^S_t$.
+
+```{r silver-indicator}
+#dt <- tbl[date>=as.Date("2018-03-01") & date<=as.Date("2021-03-31")]
+dt <- tbl
+dt[, P_tm21 := shift(P_t,15L)]
+dt[, i_tm21 := shift(i_t,15L)]
+dt[, u_tm21 := shift(u_t,15L)]
+dt[, date_tm21 := shift(date,15L)]
+dt <- dt[date>="2018-04-01" & date<="2021-03-31"]
+dt[, date_diff := date-date_tm21] # looks okay
+
+# compute silver indicator
+dt[, delta21_i_t := i_t - i_tm21]
+dt[, delta21_u_t := u_t - u_tm21]
+dt[, delta21_P_t := log(P_t / P_tm21)]
+dt[, silver_indicator := 0.2*delta21_i_t - 0.1*delta21_u_t - delta21_P_t]
+dt[, silver_indicator := 100*(exp(silver_indicator) -1)]
+
+## plot results:
+pdata <- dt[date >= "2019-04-01",.(date, P_t, silver_indicator)]
+
+# highlight regions
+pdata[silver_indicator < 10, buy := 0]
+pdata[silver_indicator >= 10, buy := 1]
+pdata[silver_indicator <= -10, sell := 1]
+pdata[silver_indicator > -10, sell := 0]
+
+pdata <- pdata[order(date),]
+pdata[, buy_tp1 := shift(buy, -1L)]
+pdata[, sell_tp1 := shift(sell, -1L)]
+pdata[, buy_tm1 := shift(buy, 1L)]
+pdata[, sell_tm1 := shift(sell, 1L)]
+pdata[sell == 1 & sell_tm1 == 0, sell_start := 1]
+pdata[sell == 1 & sell_tp1 == 0, sell_end := 1]
+pdata[buy == 1 & buy_tm1 == 0, buy_start := 1]
+pdata[buy == 1 & buy_tp1 == 0, buy_end := 1]
+pdata <- pdata[,.(date, P_t, silver_indicator, buy_start, buy_end, sell_start, sell_end)]
+
+pdata[, date_time := ymd_hms(paste0(as.character(date)," 12:00:00"))]
+
+# Get the start and end points for highlighted regions
+buy_start <- pdata[buy_start == 1,]$date_time - hms("08:00:00")
+buy_end <- pdata[buy_end == 1,]$date_time + hms("08:00:00")
+if (length(buy_start) > length(buy_end)) end <- c(buy_end, tail(pdata$date, 1))
+sell_start <- pdata[sell_start == 1,]$date_time - hms("08:00:00")
+sell_end <- pdata[sell_end == 1,]$date_time + hms("08:00:00")
+if (length(sell_start) > length(sell_end)) end <- c(sell_end, tail(pdata$date, 1))
+
+# transform all dates
+pdata[, date := date_time]
+dt[, date := ymd_hms(paste0(as.character(date)," 12:00:00"))]
+
+# plain plot
+p1 <- pdata %>% ggplot(aes(x=date, y=P_t)) +
+  scale_y_continuous(limits=c(10, 30), breaks=seq(10,30,5), position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.line.x = element_blank(),
+      axis.line.y.right = element_line(colour = 'darkgrey')) +
+  ylab("XAG/USD\n") +
+  xlab("") +
+  labs(title = bquote(Silver~Spot~Price~('^XAG/USD')), subtitle = "From 4/2019 to 3/2021") +
+  geom_line()
+
+p2 <- pdata %>% ggplot(aes(x=date, y=silver_indicator)) +
+  geom_hline(yintercept = 0, color='darkblue') +
+  geom_line() +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(angle=90),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, color = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey")) +
+  ylab(bquote(I[t]^S)) +
+  xlab("") +
+  labs(title = bquote(Silver~Indicator~(I[t]^S))) +
+  scale_y_continuous(limits=c(-35, 35), breaks=seq(-30,30,10), position = "right")
+
+#plot
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+```
+
+Observe that,
+
+1. $I^S_t$ is mean-reverting around zero
+2. Whenever $I^S_t$ diverges significantly away from zero, this indicates strong buy/sell signals, which in part materialize in subsequent `^XAG/USD` movements
+
+Hence, the $I^S_t$ indicator can be used to absorb and compare the information given by the most crucial macroeconomic variables versus the actual price changes.
+
+\newpage
+
+## Silver Market Timing Using $I^S_t$
+
+To avoid signals in the $I^S_t$ that are due to noise, let's arbitrarily define a fundamental buy/sell signal whenever $|I^S_t| \ge 10$.
+
+In the plot below, all values $I^S_t \leq -10$ are highlighted in red (i.e. _sell_ signal), and values $I^S_t \geq 10$ are highlighted in green (i.e. _buy_ signal).
+
+```{r highlighted-plot}
+# highlight regions
+buy_rects <- data.frame(start=buy_start, end=buy_end, group=seq_along(buy_start))
+sell_rects <- data.frame(start=sell_start, end=sell_end, group=seq_along(sell_start))
+
+p1_hl <- pdata %>% ggplot(aes(x=date, y=P_t)) +
+  scale_y_continuous(limits=c(10, 30), breaks=seq(10,30,5), position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.line.x = element_blank(),
+      axis.line.y.right = element_line(colour = 'darkgrey')) +
+  ylab("XAG/USD\n") +
+  xlab("") +
+  labs(title = bquote(Silver~Spot~Price~('^XAG/USD')), subtitle = "From 4/2019 to 4/2021") +
+  geom_rect(data=buy_rects, inherit.aes=FALSE, aes(xmin=buy_start, xmax=buy_end, ymin=10, ymax=30, group=group), color="transparent", fill="green", alpha=0.2) +
+  geom_rect(data=sell_rects, inherit.aes=FALSE, aes(xmin=sell_start, xmax=sell_end, ymin=10, ymax=30, group=group), color="transparent", fill="red", alpha=0.2) +
+  geom_line()
+
+p2_hl <- pdata %>% ggplot(aes(x=date, y=silver_indicator)) +
+  geom_line() +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(angle=90),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, color = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey")) +
+  ylab(bquote(I[t]^S)) +
+  xlab("") +
+  labs(title = bquote(Silver~Indicator~(I[t]^S))) +
+  geom_hline(yintercept = 10, linetype='solid', col='black', alpha = 0.3) +
+  geom_hline(yintercept = -10, linetype='solid', col='black', alpha = 0.3) +
+  scale_y_continuous(limits=c(-35, 35), breaks=seq(-30,30,10), position = "right") +
+  geom_rect(data=buy_rects, inherit.aes=FALSE, aes(xmin=buy_start, xmax=buy_end, ymin=-30, ymax=30, group=group), color="transparent", fill="green", alpha=0.2) +
+  geom_rect(data=sell_rects, inherit.aes=FALSE, aes(xmin=sell_start, xmax=sell_end, ymin=-30, ymax=30, group=group), color="transparent", fill="red", alpha=0.2)
+
+#plot highlighted versions
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1_hl), ggplotGrob(p2_hl), size = "last"))
+```
+
+Remember that this indicator signals diversions from the estimated _macroeconomically justifiable_ fair-value price. For greater detail, in the [appendix][Appendix: Zoomed Plots] I am providing zoomed-in plots over specific time periods.
+
+# A Note on Crypto-Currency
+
+Below is a plot depicting the 10-year US expected inflation^[Federal Reserve Bank of St. Louis, 10-Year Breakeven Inflation Rate [T5YIE], retrieved from FRED, Federal Reserve Bank of St. Louis; https://fred.stlouisfed.org/series/T5YIE, April 9, 2021.] (top), the Bitcoin spot price, `BTC/USD` (middle), and the silver spot price, `XAG/USD` (bottom) from January 2020 to December 2020.
+
+```{r bitcoin}
+# highlight regions
+pdata <- dt[,.(date, P_t, silver_indicator)][date>="2020-01-01" & date<="2020-12-31",]
+pdata[, date := as.Date(date)]
+btc <- fread("data/btcusd.csv", header = TRUE, stringsAsFactors = FALSE)
+btc <- btc[,.(Time, Last, Volume)]
+names(btc) <- c("date", "close_btc", "volume") # don't filter on 'volume', some have changing prices but 0 vol
+btc[, date := as.Date(as_datetime(date, format="%m/%d/%Y"))]
+btc <- btc[order(date),][date>="2020-01-01" & date<="2020-12-31",]
+
+tbl <- merge(it, pdata, by="date")
+tbl <- merge(tbl, btc, by="date")
+tbl <- merge(tbl, ut, by="date")
+
+p1 <- tbl %>% ggplot(aes(x=date, y=i_t)) +
+#  theme_wsj(color = "white") +
+  scale_y_continuous(position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey"), axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.line.x = element_blank(),
+      axis.line.y.right = element_line(colour = 'darkgrey')) +
+#      axis.title.y = element_text(angle=0)) +
+#  ylab(expression(XAG/USD/n/n)) +
+  ylab("10Y E. Inflation\n\n") +
+  xlab("") +
+  geom_line()
+
+p1.5 <- tbl %>% ggplot(aes(x=date, y=u_t)) +
+#  theme_wsj(color = "white") +
+  scale_y_continuous(position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey")) +
+#      axis.title.y = element_text(angle=0)) +
+#  ylab(expression(10Y US Treasury Rate/n/n)) +
+  ylab("10Y US Rate\n\n") +
+  xlab("") +
+  geom_line()
+
+p2 <- tbl %>% ggplot(aes(x=date, y=close_btc)) +
+#  theme_wsj(color = "white") +
+  scale_y_continuous(position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey"), axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.line.x = element_blank(),
+      axis.line.y.right = element_line(colour = 'darkgrey')) +
+#      axis.title.y = element_text(angle=0)) +
+#  ylab(expression(XAG/USD\n\n)) +
+  ylab("BTC/USD\n\n") +
+  xlab("") +
+  geom_line()
+
+p3 <- tbl %>% ggplot(aes(x=date, y=P_t)) +
+#  theme_wsj(color = "white") +
+  scale_y_continuous(position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey")) +
+#      axis.title.y = element_text(angle=0)) +
+#  ylab(expression(XAG/USD\n\n)) +
+  ylab("XAG/USD\n\n") +
+  xlab("") +
+  geom_line()
+
+#plot highlighted versions
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), ggplotGrob(p3), size = "last"))
+```
+From January 2020 to November 2020, `BTC/USD` and `XAG/USD` shared similar price developments. Both assets seemed to be driven by a rise in expected inflation. It can be inferred that, similar to silver, `BTC/USD` provides inflation protection. On these terms, `BTC/USD` can be considered a _low transaction cost_ and _zero storage cost_ competitor to the silver commodity.
+
+However, after October 2020, `BTC/USD` appreciated greatly without macroeconomic justification. More specifically, `BTC/USD` rose from USD 11,736 on 19 October 2020 to roughly USD 30,000 by the end of the year. On 12 April 2021, it reached more than USD 60,000. Simultaneously, the overall crypto currency market had an increase in market capitalization proportionally to the `BTC/USD` appreciation.
+
+**Opinion:** The risk for the silver commodity is that some of it's potential market capitalization for inflation-protection might be substituted for investment in cryptocurrency. Hence, further gain in acceptance and trust in cryptocurrency for the purpose of preserving value might, in part, drive away demand from the silver commodity market.
+
+\newpage
+
+# Conclusion
+
+In this article, I validate how long-term risk-free rates and inflation are determinants of the silver spot price. More specifically, empirical analysis suggests that the silver spot price is roughly _twice_ as sensitive to changes in USD expected inflation than it is to changes in the 10-year U.S. Treasury rate.
+
+When it comes to silver market-timing, it can be concluded the following:
+
+**A Strong Bullish `XAG/USD` Case**
+
+* A silver indicator value $I^S_t \geq 10$
+* An _unexpected_ rise in inflation^[Note that a rise in _expected inflation_ is incorporated in the silver indicator $I^S_t$]
+* A _future_ decrease in long-term risk-free rate^[Note that a decrease in the long-term risk-free rate is incorporated in the silver indicator $I^S_t$]
+* An _increase_ in demand for silver as a resource for production
+* A _decrease_ in trust in cryptocurrency
+
+**A Strong Bearish `XAG/USD` Case**
+
+* A silver indicator value $I^S_t \leq -10$
+* An _unexpected_ decrease in inflation^[Note that a decrease in _expected inflation_ is incorporated in the silver indicator $I^S_t$]
+* A _future_ increase in long-term risk-free rate^[Note that a rise in the long-term risk-free rate is incorporated in the silver indicator $I^S_t$]
+* A _decrease_ in demand for silver as a resource for production
+* A continued _increase_ in trust and acceptance in cryptocurrency
+
+# Appendix: Zoomed Plots   {-}
+
+```{r highlighted-plot2}
+# highlight regions
+buy_rects <- data.frame(start=buy_start, end=buy_end, group=seq_along(buy_start))[0,]
+sell_rects <- data.frame(start=sell_start, end=sell_end, group=seq_along(sell_start))[1,]
+
+pdata <- dt[date >= "2019-04-01",.(date, P_t, silver_indicator)][date>=as.Date("2019-08-01") & date<as.Date("2019-10-01"),]
+
+p1_hl <- pdata %>% ggplot(aes(x=date, y=P_t)) +
+  scale_y_continuous(limits=c(15, 20), breaks=seq(15,20,1), position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.line.x = element_blank(), axis.line.y.right = element_line(colour = 'darkgrey')) +
+  ylab("XAG/USD\n") +
+  xlab("") +
+  labs(title = bquote(Silver~Spot~Price~('^XAG/USD')), subtitle = "From 8/2019 to 9/2019") +
+  geom_line() +
+  geom_rect(data=sell_rects, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=15, ymax=20, group=group), color="transparent", fill="red", alpha=0.2)
+
+p2_hl <- pdata %>% ggplot(aes(x=date, y=silver_indicator)) +
+  geom_line() +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(angle=90),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, color = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey")) +
+  ylab(bquote(I[t]^S)) +
+  xlab("") +
+  labs(title = bquote(Silver~Indicator~(I[t]^S))) +
+  geom_hline(yintercept = 10, linetype='solid', col='black', alpha = 0.3) +
+  geom_hline(yintercept = -10, linetype='solid', col='black', alpha = 0.3) +
+  scale_y_continuous(limits=c(-20, 20), breaks=seq(-20,20,10), position = "right") +
+  geom_rect(data=sell_rects, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=-20, ymax=20, group=group), color="transparent", fill="red", alpha=0.2)
+
+#plot highlighted versions
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1_hl), ggplotGrob(p2_hl), size = "last"))
+```
+
+```{r highlighted-plot3}
+# highlight regions
+buy_rects <- data.frame(start=buy_start, end=buy_end, group=seq_along(buy_start))[1,]
+sell_rects <- data.frame(start=sell_start, end=sell_end, group=seq_along(sell_start))[0]
+
+pdata <- dt[date >= "2020-02-01" & date <= "2020-05-31",.(date, P_t, silver_indicator)]
+
+p1_hl <- pdata %>% ggplot(aes(x=date, y=P_t)) +
+  scale_y_continuous(limits=c(11.5, 19), breaks=seq(11.5,18.5,2), position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.line.x = element_blank(), axis.line.y.right = element_line(colour = 'darkgrey')) +
+  ylab("XAG/USD\n") +
+  xlab("") +
+  labs(title = bquote(Silver~Spot~Price~('^XAG/USD')), subtitle = "From 2/2020 to 5/2020") +
+  geom_line() +
+  geom_rect(data=buy_rects, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=11.5, ymax=18.5, group=group), color="transparent", fill="green", alpha=0.2)
+
+p2_hl <- pdata %>% ggplot(aes(x=date, y=silver_indicator)) +
+  geom_line() +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(angle=90),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, color = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey")) +
+  ylab(bquote(I[t]^S)) +
+  xlab("") +
+  labs(title = bquote(Silver~Indicator~(I[t]^S))) +
+  geom_hline(yintercept = 10, linetype='solid', col='black', alpha = 0.3) +
+  geom_hline(yintercept = -10, linetype='solid', col='black', alpha = 0.3) +
+  scale_y_continuous(limits=c(-20, 30), breaks=seq(-20,30,10), position = "right") +
+  geom_rect(data=buy_rects, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=-20, ymax=30, group=group), color="transparent", fill="green", alpha=0.2)
+
+#plot highlighted versions
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1_hl), ggplotGrob(p2_hl), size = "last"))
+```
+
+```{r highlighted-plot5}
+# highlight regions
+buy_rects <- data.frame(start=buy_start, end=buy_end, group=seq_along(buy_start))[4,]
+sell_rects <- data.frame(start=sell_start, end=sell_end, group=seq_along(sell_start))[6:8,]
+
+pdata <- dt[date >= "2020-11-01" & date <= "2021-02-28",.(date, P_t, silver_indicator)]
+
+p1_hl <- pdata %>% ggplot(aes(x=date, y=P_t)) +
+  scale_y_continuous(limits=c(22.5, 30), breaks=seq(22.5,30,2.5), position = "right") +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(margin = margin(t = 100, r = 100, b = 100, l = 100)),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, colour = 'darkgrey', linetype = 'dotted'),
+      axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.line.x = element_blank(), axis.line.y.right = element_line(colour = 'darkgrey')) +
+  ylab("XAG/USD\n") +
+  xlab("") +
+  labs(title = bquote(Silver~Spot~Price~('^XAG/USD')), subtitle = "From 11/2020 to 3/2021") +
+  geom_line() +
+  geom_rect(data=buy_rects, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=22.5, ymax=30, group=group), color="transparent", fill="green", alpha=0.2) +
+  geom_rect(data=sell_rects, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=22.5, ymax=30, group=group), color="transparent", fill="red", alpha=0.2)
+
+p2_hl <- pdata %>% ggplot(aes(x=date, y=silver_indicator)) +
+  geom_line() +
+  theme(axis.title=element_text(size=12, family="sans"),
+      axis.text=element_text(size=11, family="sans"),
+      plot.title=element_text(size=12, family="sans"), 
+      plot.subtitle = element_text(size=10, family="sans"),
+      axis.title.y = element_text(angle=90),
+      panel.background = element_rect(fill = "#FFFFFF"),
+      panel.grid.major.y = element_line(size = 0.3, color = 'darkgrey', linetype = 'dotted'),
+      axis.line = element_line(colour = "darkgrey")) +
+  ylab(bquote(I[t]^S)) +
+  xlab("") +
+  labs(title = bquote(Silver~Indicator~(I[t]^S))) +
+  geom_hline(yintercept = 10, linetype='solid', col='black', alpha = 0.3) +
+  geom_hline(yintercept = -10, linetype='solid', col='black', alpha = 0.3) +
+  scale_y_continuous(limits=c(-20, 20), breaks=seq(-20,20,10), position = "right") +
+  geom_rect(data=buy_rects, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=-20, ymax=20, group=group), color="transparent", fill="green", alpha=0.2) +
+  geom_rect(data=sell_rects, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=-20, ymax=20, group=group), color="transparent", fill="red", alpha=0.2)
+
+#plot highlighted versions
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1_hl), ggplotGrob(p2_hl), size = "last"))
+```
+
+\newpage
+
+# Disclaimer   {-}
+
+This article has been prepared and issued by Christian Satzky (CS).
+
+*Accuracy of content:* All information used in the publication of this report has been compiled from publicly available sources that are believed to be reliable, however I do not guarantee the accuracy or completeness of this report and have not sought for this information to be independently verified. Opinions contained in this report represent those of CS at the time of publication. Forward-looking information or statements in this report contain information that is based on assumptions, forecasts of future results, estimates of amounts not yet determinable, and therefore involve known and unknown risks, uncertainties and other factors which may cause the actual results, performance or achievements of their subject matter to be materially different from current expectations.
+
+*Exclusion of Liability:* To the fullest extent allowed by law, CS shall not be liable for any direct, indirect or consequential losses, loss of profits, damages, costs or expenses incurred or suffered by you arising out or in connection with the access to, use of or reliance on any information contained on this note. This article does not constitute investment advice.
+
+*No investment advice:* The information that I provide should not be considered in any manner whatsoever as investment advice. Also, the information provided by me should not be construed by any reader to effect, or attempt to effect, any transaction in a security.
+
+*Investment in securities mentioned:* CS does not himself hold any positions in the securities mentioned in this report.
+
+*Copyright:* Copyright 2021 Christian Satzky (CS). No further distribution of this work is permitted without Christian Satzky's express written consent.
+
+\newpage
+
+# References   {-}
